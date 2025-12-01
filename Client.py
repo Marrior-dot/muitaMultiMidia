@@ -84,7 +84,7 @@ class Client:
 	def playMovie(self):
 		"""Play button handler."""
 
-		print(self.state)
+		#print(self.state)
 		if self.state == self.READY:
 			# Create a new thread to listen for RTP packets
 			threading.Thread(target=self.listenRtp).start()
@@ -96,19 +96,14 @@ class Client:
 		"""Listen for RTP packets."""
 		while True:
 			try:
-				data = self.rtspSocket.recv(20480)
+				data = self.rtpSocket.recv(20480)
+				#print(f'dados recebidos > {data}')
 				if data:
 					rtpPacket = RtpPacket()
-					V = 2
-					P, X, CC, M = 0, 0, 0, 0
-					PT = 26
-					SEQNUM = self.frameNbr
-					SSRC = 2
-					rtpPacket.encode(V,P,X,CC,SEQNUM, M,PT,SSRC, data)
 					rtpPacket.decode(data)
 					currFrameNbr = rtpPacket.seqNum()
 					print ("Current Seq Num: " + str(currFrameNbr))
-										
+					#print(rtpPacket)			
 					if currFrameNbr > self.frameNbr: # Discard the late packet
 						self.frameNbr = currFrameNbr
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
@@ -159,11 +154,10 @@ class Client:
 			# Update RTSP sequence number.
 			self.rtspSeq += 1
 			# Write the RTSP request to be sent.
-			request = f'SETUP rtsp://localhost:1026/{self.fileName} RTSP/1.0\nCSeq: {self.rtspSeq}\nTransport: RTP/UDP; compression;client_port= 10000; mode = PLAY'
+			request = f'SETUP rtsp://localhost:1026/{self.fileName} RTSP/1.0\nCSeq: {self.rtspSeq}\nTransport: RTP/UDP; compression;client_port= {self.rtpPort}; mode = PLAY'
 			self.requestSent = self.SETUP
 		# Play request
 		elif requestCode == self.PLAY and self.state == self.READY:
-			threading.Thread(target=self.recvRtspReply).start()
 			# Update RTSP sequence number.
 			self.rtspSeq += 1
 			
@@ -175,7 +169,7 @@ class Client:
 		
 		# Pause request
 		elif requestCode == self.PAUSE and self.state == self.PLAYING:
-			threading.Thread(target=self.recvRtspReply).start()
+			#threading.Thread(target=self.recvRtspReply).start()
 			self.rtspSeq += 1
 			request = f'PAUSE rtsp://localhost:1026/{self.fileName} RTSP/1.0\nCSeq: {self.rtspSeq} Session: {self.sessionId}'
 			# Update RTSP sequence number.
@@ -233,8 +227,6 @@ class Client:
 			if self.sessionId == 0:
 				self.sessionId = session
 			print(f"Data received: {data}")
-			print(f"sessionId:{self.sessionId}")
-			print(f"session:{session}")
 			# Process only if the session ID is the same
 			if self.sessionId == session:
 				if int(lines[0].split(' ')[1]) == 200: 
@@ -247,7 +239,7 @@ class Client:
 						# Open RTP port.
 						self.openRtpPort() 
 					elif self.requestSent == self.PLAY:
-						self.state = self.PLAYING
+						self.state = self.PLAYING 
 					elif self.requestSent == self.PAUSE:
 						self.state = self.READY 
 						# The play thread exits. A new thread is created on resume.
@@ -263,15 +255,15 @@ class Client:
 		# TO COMPLETE
 		#-------------
 		# Create a new datagram socket to receive RTP packets from the server
-		novo_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.rtpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		# Set the timeout value of the socket to 0.5sec
-		novo_socket.settimeout(0.5)
+		self.rtpSocket.settimeout(0.5)
 		try:
 			#pass
 			# Bind the socket to the address using the RTP port given by the client user
 			# ...
 			#novo_socket.connect(('localhost',self.rtpPort))
-			novo_socket.bind(('localhost',self.rtpPort))
+			self.rtpSocket.bind(("",self.rtpPort))
 		except:
 			tkMessageBox.showwarning('Unable to Bind', 'Unable to bind PORT=%d' %self.rtpPort)
 
@@ -282,3 +274,4 @@ class Client:
 			self.exitClient()
 		else: # When the user presses cancel, resume playing.
 			self.playMovie()
+#-------------------------------------------------------------------------------------------------#

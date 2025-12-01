@@ -52,14 +52,8 @@ class ServerWorker:
 		seq = request[1].split(' ')
 		
 		# Process SETUP request
-		#print(self.clientInfo)
-
 		if requestType == self.SETUP:
 			if self.state == self.INIT:
-				# Update state
-				print ("processing SETUP\n")
-				print(f"client info: {self.clientInfo}")
-				print(f"filename: {filename}")
 				try:
 					self.clientInfo['videoStream'] = VideoStream(filename)
 					self.state = self.READY
@@ -85,7 +79,7 @@ class ServerWorker:
 				self.clientInfo["rtpSocket"] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 				
 				self.replyRtsp(self.OK_200, seq[1])
-				
+				print("passou")
 				# Create a new thread and start sending RTP packets
 				self.clientInfo['event'] = threading.Event()
 				self.clientInfo['worker']= threading.Thread(target=self.sendRtp) 
@@ -93,7 +87,6 @@ class ServerWorker:
 		
 		# Process PAUSE request
 		elif requestType == self.PAUSE:
-			print('self.state:',self.state)
 			if self.state == self.PLAYING:
 				print ("processing PAUSE\n")
 				self.state = self.READY
@@ -123,14 +116,11 @@ class ServerWorker:
 				break 
 				
 			data = self.clientInfo['videoStream'].nextFrame()
-			#print(f'data:{data}')
 			if data: 
 				frameNumber = self.clientInfo['videoStream'].frameNbr()
 				try:
 					address = self.clientInfo['rtspSocket'][1][0]
-					#print(f'rtpPort:{self.clientInfo["rtpPort"]}')
 					regex_port = re.search(r'(\d+)', self.clientInfo['rtpPort'])
-					#port = int(self.clientInfo['rtpPort'])
 					port = int(regex_port.group(1))
 					self.clientInfo['rtpSocket'].sendto(self.makeRtp(data, frameNumber),(address,port))
 				except:
@@ -153,7 +143,8 @@ class ServerWorker:
 		rtpPacket = RtpPacket()
 		
 		rtpPacket.encode(version, padding, extension, cc, seqnum, marker, pt, ssrc, payload)
-		
+		#print(f'encoded rtpPacket:{rtpPacket}')
+		#print(rtpPacket.getPacket())
 		return rtpPacket.getPacket()
 		
 	def replyRtsp(self, code, seq):

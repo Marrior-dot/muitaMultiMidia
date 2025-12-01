@@ -10,29 +10,29 @@ class RtpPacket:
 		
 	def encode(self, version, padding, extension, cc, seqnum, marker, pt, ssrc, payload):
 		"""Encode the RTP packet with header fields and payload."""
-		timestamp = int(time())
+		timestamp = int(time()) #segundos em inteiro
 		header = bytearray(HEADER_SIZE)
-		#print(f'header before filling:{header}')
 		#--------------
 		# TO COMPLETE
 		#--------------
 		# Fill the header bytearray with RTP header fields
-		header[0] = version  | 1 << (7-0)
-		#print('versao:',header[0])
-		header[0] ,header[0], header[0], header[0] = padding | padding << (7-1), extension | extension << (7-2)  , cc | cc << (7-3), marker | marker << (7-4)
-		header[1] = pt | 1 << (7-1)
-		header[2] = (seqnum >> 8) & 0xFF
-		header[3] = seqnum & 0xFF
+		self.header = header
+		self.header[0] = version  | 1 << (7-0) #130
+		self.header[0] ,self.header[0], self.header[0], self.header[0] = padding | padding << (7-1), extension | extension << (7-2)  , cc | cc << (7-3), marker | marker << (7-4) #0
+		self.header[1] = pt | 1 << (7-1) #88
+		self.header[2] = (seqnum >> 8) & 0xFF #0, assume o valor 1 quando seqnum = 255
+		self.header[3] = seqnum & 0xFF #Sofre incrementos de 1
 
-		header[4] = (timestamp >> 24) & 0xFF
-		header[5] = (timestamp >> 16) & 0xFF
-		header[6] = (timestamp >> 8) & 0xFF
-		header[7] = timestamp & 0xFF
+		self.header[4] = (timestamp >> 24) & 0xFF 
+		self.header[5] = (timestamp >> 16) & 0xFF
+		print(self.header[5])
+		self.header[6] = (timestamp >> 8) & 0xFF
+		self.header[7] = timestamp & 0xFF #sofre incrementos de 1 conforme o tempo passa
 
-		header[8] = (ssrc >> 24) & 0xFF
-		header[9] = (ssrc >> 16) & 0xFF
-		header[10] = (ssrc >> 8) & 0xFF
-		header[11] = ssrc & 0xFF
+		self.header[8] = (ssrc >> 24) & 0xFF
+		self.header[9] = (ssrc >> 16) & 0xFF
+		self.header[10] = (ssrc >> 8) & 0xFF
+		self.header[11] = ssrc & 0xFF
 		
 		# Get the payload from the argument
 		self.payload = payload
@@ -67,4 +67,5 @@ class RtpPacket:
 		
 	def getPacket(self):
 		"""Return RTP packet."""
+		#print(self.header + self.payload)
 		return self.header + self.payload
