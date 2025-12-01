@@ -115,8 +115,6 @@ class Client:
 				# Upon receiving ACK for TEARDOWN request,
 				# close the RTP socket
 				if self.teardownAcked == 1:
-					self.rtspSocket.shutdown(socket.SHUT_RDWR)
-					self.rtspSocket.close()
 					break
 					
 	def writeFrame(self, data):
@@ -211,6 +209,9 @@ class Client:
 			
 			# Close the RTSP socket upon requesting Teardown
 			if self.requestSent == self.TEARDOWN:
+				print('bbbb')
+				print(self.rtspSocket)
+				print(socket.SHUT_RDWR)
 				self.rtspSocket.shutdown(socket.SHUT_RDWR)
 				self.rtspSocket.close()
 				break
